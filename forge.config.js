@@ -37,7 +37,13 @@ module.exports = {
   ],
   publishers: [
     {
-      name: '@electron-forge/publisher/github'
+      name: '@electron-forge/publisher/github',
+      config: {
+        repository: {
+          owner: "matthewlamperski",
+          repository: "analysis-resurgence-3d"
+        }
+      }
     }
   ],
   plugins: [
