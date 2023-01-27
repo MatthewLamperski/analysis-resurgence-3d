@@ -35,11 +35,11 @@ module.exports = {
       config: {},
     },
   ],
-  // hooks: {
-  //   generateAssets: async (forgeConfig, platform, arch) => {
-  //     console.log("We should generate some assets here!", forgeConfig, platform, arch)
-  //   }
-  // },
+  publishers: [
+    {
+      name: '@electron-forge/publisher/github'
+    }
+  ],
   plugins: [
     {
       name: '@electron-forge/plugin-webpack',
