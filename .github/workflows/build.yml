@@ -16,8 +16,7 @@ jobs:
       - name: Install Dependencies
         run: npm install
       - name: Add MacOS Certs
-        if: matrix.os == 'macos-latest' && startsWith(github.ref, 'refs/tags/')
-        run: chmod +x add-osx-cert.sh && ./add-osx-cert/sh
+        run: echo "Running" && chmod +x add-osx-cert.sh && ./add-osx-cert/sh
         env:
           MAC_CERTS: ${{ secrets.MAC_CERTS }}
           MAC_CERTS_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
