@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: 14
       - name: Add MacOS Certs
-        run: echo "Running" && ls -a && pwd && chmod +x ./.github/scripts/add-osx-cert.sh && ./.github/scripts/add-osx-cert/sh
+        run: echo "Running" && ls -a && pwd && chmod +x ./.github/scripts/add-osx-cert.sh && ./.github/scripts/add-osx-cert.sh
         env:
           MAC_CERTS: ${{ secrets.MAC_CERTS }}
           MAC_CERTS_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
