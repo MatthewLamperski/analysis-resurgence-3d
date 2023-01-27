@@ -42,7 +42,8 @@ module.exports = {
         repository: {
           owner: "matthewlamperski",
           repository: "analysis-resurgence-3d"
-        }
+        },
+        draft: true,
       }
     }
   ],
