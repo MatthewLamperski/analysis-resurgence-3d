@@ -41,7 +41,7 @@ module.exports = {
       config: {
         repository: {
           owner: "matthewlamperski",
-          repository: "analysis-resurgence-3d"
+          name: "analysis-resurgence-3d"
         },
         draft: true,
       }
