@@ -1,17 +1,21 @@
-name: Build
+name: Package and Release
+
 on: [ push, pull_request ]
 
 jobs:
-  build_on_mac:
-    runs-on: macos-latest
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-latest ]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@master
         with:
           node-version: 14
-      - name: install dependencies
+      - name: Install Dependencies
         run: npm install
-      - name: Add MacOS certs
+      - name: Add MacOS Certs
         if: matrix.os == 'macos-latest' && startsWith(github.ref, 'refs/tags/')
         run: chmod +x add-osx-cert.sh && ./add-osx-cert/sh
         env:
