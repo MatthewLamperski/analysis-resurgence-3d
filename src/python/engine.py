@@ -68,6 +68,21 @@ class AnalysisEngine:
             # Write each row
             writer.writerow(map(lambda part: part.file_path[:-4], self.participants))
 
+            writer.writerow([])
+            # Write SR info
+            for i in range(4):
+                writer.writerow(map(lambda part: part.sr[i], self.participants))
+            writer.writerow([])
+
+            # Inform if has been cut off, if so, the rest of analysis should essentially be ignored, as it will be inaccurate
+            writer.writerow(
+                map(lambda _: "Cut-off?",
+                    self.participants))
+
+            writer.writerow(
+                map(lambda part: part.exclusion_reason == "Cut-Off",
+                    self.participants))
+
             # Write events
             for key, event_type in self.event_list:
                 key = int(key)
@@ -320,18 +335,3 @@ class AnalysisEngine:
             writer.writerow(["Proportion in Phase 3"])
             writer.writerow(["Target"])
             writer.writerow([str(round(float(float(countTarget) / len(self.excluded_participants)), 2))])
-
-    # NOTE: I was told this functionality was not needed. If it turns out you do need it, my email is matthew.lamperski@gmail.com
-    def __produce_cue_pairing_summary(self, out_file_name):
-        out_path = os.path.join(self.dir_path, "out", "cue_pairing", f"{out_file_name}.csv")
-        self.out_path = out_path
-
-        if not os.path.exists(os.path.dirname(out_path)):
-            try:
-                os.makedirs(os.path.dirname(out_path),
-                            exist_ok=True)  # Created dir if not exists, WILL overwrite previous
-            except OSError:  # Guard against very unlikely race condition
-                pass
-
-        with open(out_path, "w+") as out_file:
-            writer = csv.writer(out_file)

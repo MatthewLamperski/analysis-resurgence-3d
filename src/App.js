@@ -175,7 +175,8 @@ const App = () => {
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'column',
-        padding: 30
+        padding: 30,
+        position: 'relative',
       }}>
         {renderScreen()}
       </div>

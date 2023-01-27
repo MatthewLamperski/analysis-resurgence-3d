@@ -6,6 +6,8 @@
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
+    "set-perms:start": "chmod -R 755 .webpack/main/python",
+    "set-perms:make": "ls -a",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",

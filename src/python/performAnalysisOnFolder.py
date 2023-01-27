@@ -14,11 +14,11 @@ if __name__ == '__main__':
         }
         json.dump(response, sys.stdout)
     else:
+        config = json.loads(sys.argv[3])
         try:
             # All this information is received from Electron
             dir_path = str(sys.argv[1])
             analysis_type = str(sys.argv[2])
-            config = json.loads(sys.argv[3])
 
             participant_files = os.listdir(dir_path)
 
@@ -29,7 +29,6 @@ if __name__ == '__main__':
             end = time.time() - start
 
             response = {
-                "error": None,
                 "message": "Done",
                 "files_processed": engine.files_processed,
                 "duration": round(end, 4),
@@ -41,6 +40,7 @@ if __name__ == '__main__':
             sys.stdout.flush()
         except Exception as err:
             response = {
-                "error": err
+                "error": repr(err),
+                "config": repr(config),
             }
-            print(response)
+            json.dump(response, sys.stdout)

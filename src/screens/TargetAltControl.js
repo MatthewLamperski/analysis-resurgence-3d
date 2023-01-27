@@ -21,6 +21,22 @@ const TargetAltControl = ({setScreen}) => {
       setDragging(false)
     }
   }, [dragging])
+  const [overrideOptions, setOverrideOptions] = useState()
+  const handleReAnalyze = useCallback(() => {
+    if (analysisConfig.phases_duration && analysisConfig.phases_duration[0] !== 0) {
+      console.log(analysisConfig)
+      window.api.send('toMain', {
+        ...overrideOptions,
+        config: {
+          ...analysisConfig,
+          bin_num_phase_2_max: analysisConfig.bin_num_phase_1,
+          bin_num_phase_3: analysisConfig.bin_num_phase_1,
+          phases_duration: analysisConfig.phases_duration.map(duration => duration * 1000)
+        }
+      })
+      setShowDurationOverrideModal(false)
+    }
+  }, [overrideOptions, analysisConfig])
   const handleDrop = useCallback((e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -41,11 +57,14 @@ const TargetAltControl = ({setScreen}) => {
     }
   }, [dragging])
   const [err, setErr] = useState()
+  const [showDurationOverrideModal, setShowDurationOverrideModal] = useState(false);
+
   const refresh = useCallback(() => {
     setFinished(undefined)
     setErr(undefined)
     setAnalyzing(false)
     setDragging(false)
+    setShowDurationOverrideModal(false)
   }, [])
   useEffect(() => {
     window.api.receive('fromMain', (event, args) => {
@@ -57,6 +76,9 @@ const TargetAltControl = ({setScreen}) => {
       } else if (event[0] === "success") {
         setFinished(event[1])
         setAnalyzing(false)
+      } else if (event[0] === "override_phases_duration") {
+        setShowDurationOverrideModal(true);
+        setOverrideOptions(event[1])
       }
     })
   }, [])
@@ -83,6 +105,16 @@ const TargetAltControl = ({setScreen}) => {
     if (setScreen) {
       setScreen('menu')
     }
+  }, [])
+  const handlePhasesDurationChanged = useCallback(e => {
+    setAnalysisConfig(prevState => ({
+      ...prevState,
+      phases_duration: [
+        Number(e.target.value),
+        Number(e.target.value),
+        Number(e.target.value),
+      ]
+    }))
   }, [])
   const handleBinSizeChanged = useCallback((e) => {
     setAnalysisConfig(prevState => ({
@@ -391,6 +423,106 @@ const TargetAltControl = ({setScreen}) => {
               fontSize: 12,
               textAlign: 'center',
             }}>Restart</u>
+          </div>
+        )
+      }
+
+      {
+        showDurationOverrideModal && (
+          <div style={{
+            position: 'absolute',
+            height: '100%',
+            width: '100%',
+            backgroundColor: "#19191970", //"#19191970"
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          }}>
+            <div style={{
+              borderRadius: 15,
+              backgroundColor: "#191919",
+              padding: 30,
+              maxWidth: '40%',
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+              flexDirection: 'column',
+              boxShadow: "0 0 10px 10px #FFFfff09"
+            }}>
+              <h4 style={{
+                color: colorScheme === 'dark' ? '#b4b4b4' : 'black',
+                marginTop: 0,
+                marginBottom: 0,
+                marginLeft: 5,
+              }}>There was a problem</h4>
+              <h5 style={{
+                color: colorScheme === 'dark' ? '#969696' : 'black',
+                marginTop: 10,
+                marginBottom: 20,
+                marginLeft: 5,
+                fontWeight: 300
+              }}>Event markers for the end of phase 1 and 2 were not logged in some of those files. You can either
+                manually
+                set the duration of each phase, or cancel analysis.</h5>
+              <div style={{
+                flexDirection: 'column',
+                display: 'flex',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+              }}>
+                <h5 style={{
+                  color: colorScheme === 'dark' ? '#b4b4b4' : 'black',
+                  marginTop: 0,
+                  marginBottom: 0,
+                  marginLeft: 5,
+                }}>Phase duration (seconds):</h5>
+                <input
+                  value={analysisConfig.phases_duration && analysisConfig.phases_duration[0] !== 0 ? analysisConfig.phases_duration[0] : ''}
+                  style={styles.input}
+                  type="number"
+                  onChange={handlePhasesDurationChanged}/>
+              </div>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                alignSelf: 'stretch'
+              }}>
+                <h5
+                  onClick={refresh}
+                  style={{
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    color: colorScheme === 'dark' ? '#b4b4b4' : 'black',
+                    marginTop: 0,
+                    marginBottom: 0,
+                    marginLeft: 5,
+                  }}>Cancel</h5>
+                <div onClick={handleReAnalyze} className={
+                  analysisConfig.phases_duration && analysisConfig.phases_duration[0] !== 0 ? 'optionBar' : ''
+                } style={{
+                  backgroundColor: "#323232",
+                  padding: 8,
+                  borderRadius: 15,
+                  cursor: analysisConfig.phases_duration && analysisConfig.phases_duration[0] !== 0 ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  paddingLeft: 15,
+                  paddingRight: 15,
+                  marginLeft: 10
+                }}>
+                  <h5
+                    style={{
+                      color: colorScheme === 'dark' ? '#b4b4b4' : 'black',
+                      marginTop: 0,
+                      marginBottom: 0,
+                    }}>Analyze</h5>
+                </div>
+              </div>
+            </div>
           </div>
         )
       }

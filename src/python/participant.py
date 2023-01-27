@@ -34,27 +34,20 @@ class Participant:
         # These will be initialized (or set) by analyze_event_markers
         self.phase_3_latency = [-1000, -1000, -1000, -1000]  # Initialize with -1000ms latency for each phase
         self.phases_offset = (0, 0, 0)
-        self.phases_duration = [0, 0, 0]
+
+        # We found that event markers 30 and 31 (end of phases 1 and 2) were not present in all participant files
+        # So, if that is found to be the case, then this script will tell the GUI this, and a manual override
+        # will be allowed. In that case, the phase durations will be manually set.
+        if 'phases_duration' in self.config:
+            self.phases_duration = self.config['phases_duration']
+        else:
+            self.phases_duration = [0, 0, 0]
+
         self.bin_phase_2 = None
 
         self.excluded = False
         self.exclusion_reason = ''
-
-        # This is where this program will differ from Toshi's. Storing the types of events in a 4d array
-        # is not an optimal way of storing the data - takes up far too much space.
-        # Instead, each response will be its own dictionary that looks like the following:
-
-        # response = {
-        #   bin: int (which bin the response fell in)
-        #   event_type: int (which event occurred)
-        #   phase: int (which phase did this occur in? - 0 - 2)
-        # }
-
-        # Each participant will have their own response list, turning this:
-
-        # self.type_response = np.zeros((16, 3, 30))  # (response types, phases, max bins)
-
-        # into this:
+        self.sr = []
 
         self.event_list = []
         self.event_99_detected = False
@@ -91,6 +84,15 @@ class Participant:
                     # 0 or 1 value here is converted to a boolean for clarity
                     self.no_phase_1 = bool(int(current_line.rstrip().split()[1]))
 
+                if current_line.startswith("totalSR:"):
+                    self.sr.append(current_line.rstrip())
+                if current_line.startswith("srPhase1:"):
+                    self.sr.append(current_line.rstrip())
+                if current_line.startswith("srPhase2:"):
+                    self.sr.append(current_line.rstrip())
+                if current_line.startswith("srPhase3:"):
+                    self.sr.append(current_line.rstrip())
+
             current_line = file.readline()  # go to the first event
             # At this point, the file reader is at the list of events, so we need to keep reading until blank line
             while not current_line == "\n":
@@ -122,14 +124,24 @@ class Participant:
         first_sr = True if self.no_phase_1 else False
 
         # Grabs the end times of each phase (this relies on there only being one entry starting
-        # with '30)', '31)', and '99)'
-        # next() accepts a default, so if '99' is not found, then it will be the max time
-        self.phases_offset = (
-            next(time for (event_type, time) in self.events if (event_type == "30")),
-            next(time for (event_type, time) in self.events if (event_type == "31")),
-            next((time for (event_type, time) in self.events if (event_type == "99")),
-                 max(self.events, key=lambda event: event[1])[1])
-        )
+        # with '30)', '31)', and '99)', unless a manual duration override is supplied.
+        if 'phases_duration' in self.config:
+            self.phases_offset = (
+                self.phases_duration[0],  # End of phase 1
+                self.phases_duration[0] + self.phases_duration[1],  # End of phase 2
+                sum(self.phases_duration)  # End of phase 3
+            )
+        else:
+            # next() accepts a default, so if '99' is not found, then it will be the max time
+            self.phases_offset = (
+                next((time for (event_type, time) in self.events if (event_type == "30")), -1),
+                next((time for (event_type, time) in self.events if (event_type == "31")), -1),
+                next((time for (event_type, time) in self.events if (event_type == "99")),
+                     max(self.events, key=lambda event: event[1])[1])
+            )
+
+        if self.phases_offset[0] == -1 or self.phases_offset[1] == -1:
+            raise Exception(1)
 
         for event_marker in self.events:
             event_type, event_time = event_marker
@@ -141,8 +153,9 @@ class Participant:
                     first_sr = True
                     # current_phase += 1  # Commenting out -> we started out in phase 1 (current_phase = 0)
                     current_phase_start_time = event_time
+                    self.__assign_forward(0, current_phase, 0)
 
-            elif event_type == "30":  # End of phase 1
+            if event_type == "30":  # End of phase 1
                 self.phases_duration[0] = event_time - current_phase_start_time
                 current_phase += 1
                 current_phase_start_time = event_time
@@ -232,6 +245,13 @@ class Participant:
         if tg_responses_p2_last_bin >= (0.5 * avg_tg_responses_p1):
             self.excluded = True
             self.exclusion_reason = f"Target responding did not decrease below 50% of phase 1 levels.\nPhase 1 AVG: {avg_tg_responses_p1}. Last bin of Phase 2: {tg_responses_p2_last_bin}"
+
+        # If 99 was not detected, (some csvs were cut off in earlier experiments)
+        # then do NOT exclude, instead give exclusion reason to be 'cut-off', so that when producing summary,
+        # the engine will detect not to give analysis, and instead only give summary data found at top of page
+        if not self.event_99_detected:
+            self.excluded = False
+            self.exclusion_reason = "Cut-Off"
 
     # Helper Functions (named bin as _bin b/c python uses that name elsewhere - just to be safe)
     def __assign_backward(self, event_type, phase, time_till_phase_end):

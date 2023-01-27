@@ -54,8 +54,26 @@ const runAnalysis = (event, analysis, dirPath, config) => {
       event.sender.send('fromMain', ['error', {message: JSON.stringify(error)}])
     }
     if (stdout) {
-      console.log("Finished: ", JSON.parse(stdout))
-      event.sender.send('fromMain', ['success', JSON.parse(stdout)])
+      // If there is an error in here, handle appropriately, else send back success info
+      if (stdout && JSON.parse(stdout)) {
+        console.log(JSON.parse(stdout))
+        let output = JSON.parse(stdout);
+        if (output.error) {
+          if (output.error === 'Exception(1)') {
+            event.sender.send('fromMain', ['override_phases_duration', {
+              filePaths: [dirPath],
+              command: 'openFilesDialog',
+              analysis,
+              config,
+            }])
+          }
+        } else {
+          event.sender.send('fromMain', ['success', JSON.parse(stdout)])
+        }
+      } else {
+        console.log(stdout)
+        event.sender.send('fromMain', ['error', stdout])
+      }
     }
     if (stderr) {
       console.log(stderr)
