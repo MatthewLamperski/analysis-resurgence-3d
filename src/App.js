@@ -6,6 +6,14 @@ import TargetAltControl from "./screens/TargetAltControl";
 import CuePairingAnalysis from "./screens/CuePairingAnalysis";
 
 const App = () => {
+  useEffect(() => {
+    window.api.send('toMain', {
+      command: 'check updates'
+    })
+    window.api.receive('fromMain', (event, args) => {
+      console.log('Event received from main', JSON.stringify(event, null, 2))
+    })
+  }, [])
   const [colorScheme, setColorScheme] = useState('dark')
   const [screen, setScreen] = useState('menu')
   const goToTargetAltControl = useCallback(() => {

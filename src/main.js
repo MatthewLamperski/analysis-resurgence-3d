@@ -3,10 +3,22 @@ const path = require('path');
 const child_process = require("child_process")
 const fs = require('fs')
 const electron = require("electron");
-
+const pkg = require("../package.json");
+const {format} = require('util')
+const os = require("os");
+const userAgent = format(
+  '%s/%s (%s: %s)',
+  pkg.name,
+  pkg.version,
+  os.platform(),
+  os.arch(),
+)
 require("update-electron-app")({
   logger: console
 });
+
+// I'm going to handle updates manually
+
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -88,11 +100,66 @@ const runAnalysis = (event, analysis, dirPath, config) => {
 
 ipcMain.on('toMain', (event, args) => {
   console.log('Evt received: ', args);
-  // event.sender.send('fromMain', {
-  //   file: path.join(__dirname, '/python/dist/analyze/analyze'),
-  //   isFile: fs.lstatSync(path.join(__dirname, '/python/dist/analyze/analyze')).isFile(),
-  //   isDir: fs.lstatSync(path.join(__dirname, '/python/dist/analyze/analyze')).isDirectory()
-  // })
+  event.sender.send('fromMain', ['Evt received: ', args])
+
+  if (args.command && args.command === 'check updates') {
+    if (app.isReady()) {
+      const log = (...args) => {
+        event.sender.send('fromMain', [...args])
+      }
+      const defaults = {
+        host: 'https://update.electronjs.org',
+        updateInterval: '10 minutes',
+        logger: console,
+        notifyUser: true
+      }
+      const {autoUpdater} = electron;
+      const reqHeaders = {'User-Agent': userAgent}
+      const feedURL = `${defaults.host}/MatthewLamperski/${pkg.name}/${process.platform}-${process.arch}/${app.getVersion()}`
+      autoUpdater.setFeedURL(feedURL, reqHeaders);
+      autoUpdater.on('error', err => {
+        log(err)
+      })
+      autoUpdater.on('error', err => {
+        // Why is this being triggered?
+        log('updater error', {err})
+      })
+
+      autoUpdater.on('checking-for-update', () => {
+        log('checking-for-update')
+      })
+
+      autoUpdater.on('update-available', () => {
+        log('update-available; downloading...')
+      })
+
+      autoUpdater.on('update-not-available', () => {
+        log('update-not-available')
+      })
+      autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateURL) => {
+        log('update-downloaded', [event, releaseNotes, releaseName, releaseDate, updateURL])
+
+        const dialogOpts = {
+          type: 'info',
+          buttons: ['Restart', 'Later'],
+          title: 'Application Update',
+          message: process.platform === 'win32' ? releaseNotes : releaseName,
+          detail: 'A new version has been downloaded. Restart the application to apply the updates.'
+        }
+
+        dialog.showMessageBox(dialogOpts).then(({response}) => {
+          if (response === 0) autoUpdater.quitAndInstall()
+        })
+      })
+
+      autoUpdater.checkForUpdates()
+      setInterval(() => {
+        autoUpdater.checkForUpdates()
+      }, 5000)
+    }
+  }
+
+
   if (args.command && args.command === 'open file') {
     child_process.exec(`open "${path.dirname(args.fileName)}"`, (error, stdout, stderr) => {
       if (error) {
