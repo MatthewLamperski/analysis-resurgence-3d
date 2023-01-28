@@ -66,6 +66,8 @@ const runAnalysis = (event, analysis, dirPath, config) => {
               analysis,
               config,
             }])
+          } else {
+            event.sender.send('fromMain', ['error', {message: JSON.stringify({from: 'python', ...output})}])
           }
         } else {
           event.sender.send('fromMain', ['success', JSON.parse(stdout)])

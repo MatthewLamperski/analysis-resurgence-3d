@@ -60,17 +60,19 @@ class Participant:
 
         # Next, we want to analyze all the events to generate the
         # summary that will be used to create new csv file
-        self.__analyze_event_markers()
+        if not self.excluded:
+            self.__analyze_event_markers()
 
     # Private function to be used during initialization
     def __extract_event_markers(self):
         # TODO: Check on Windows to see if this properly escapes ANY filepath
         file = open(os.path.join(self.dir_path, self.file_path), "r")
-
         # Reads first 6 bytes (in this case letters/nums)
         # If line doesn't begin with 'Start:', ignore rest of initialization
         if file.readline(6) != "Start:":
-            self.error = f"File {self.file_path} does not begin with 'Start:'"
+            # TODO: do something if reached
+            self.excluded = True
+            self.exclusion_reason = f"File {self.file_path} does not begin with 'Start:'"
         else:
             current_line = file.readline()
 
