@@ -16,7 +16,7 @@
     "name": "MatthewLamperski",
     "email": "matthew.lamperski@gmail.com"
   },
-  "repository": "https://github.com/MatthewLamperski/analysis-resurgence-3d.git",
+  "repository": "https://github.com/MatthewLamperski/analysis-resurgence-3d",
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.20.12",
@@ -33,6 +33,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.0.0",
     "electron": "22.0.2",
+    "electron-icon-builder": "^2.0.1",
     "node-loader": "^2.0.0",
     "style-loader": "^3.0.0"
   },

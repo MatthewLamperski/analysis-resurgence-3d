@@ -4,6 +4,7 @@ require("dotenv").config()
 module.exports = {
 
   packagerConfig: {
+    icon: './icons/icon',
     osxSign: {
       "identity": "Developer ID Application: Wadzoo, LLC (G62FUD4D8J)"
     },
@@ -17,24 +18,8 @@ module.exports = {
   rebuildConfig: {},
   makers: [
     {
-      name: '@electron-forge/maker-squirrel',
-      config: {},
-    },
-    {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin', 'win32'],
-    },
-    {
-      name: '@electron-forge/maker-dmg',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-deb',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-rpm',
-      config: {},
     },
   ],
   publishers: [
