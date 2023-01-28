@@ -1,5 +1,18 @@
 const CopyPlugin = require('copy-webpack-plugin');
-const path = require('path');
+const chmodr = require('chmodr')
+const path = require("path");
+
+class PermissionsPlugin {
+  apply(compiler) {
+    compiler.hooks.afterEmit.tap("PermissionsPlugin", () => {
+      chmodr(path.join(__dirname, './.webpack/main/python'), 0o755, err => {
+        console.log("Error changing exe perms " + err)
+      })
+      console.log("changing permissions", path.join(__dirname, './.webpack/main/python'), __dirname)
+    })
+  }
+}
+
 module.exports = {
   /**
    * This is the main entry point for your application, it's the first file
@@ -11,6 +24,7 @@ module.exports = {
     rules: require('./webpack.rules'),
   },
   plugins: [
+    new PermissionsPlugin(),
     new CopyPlugin({
       options: {},
       patterns: [

@@ -218,7 +218,7 @@ const TargetAltControl = ({setScreen}) => {
                 marginBottom: 0,
                 marginLeft: 5,
               }}>Bin Size (seconds)</h5>
-              <input value={analysisConfig.bin_size} style={styles.input} type="number"
+              <input defaultValue={analysisConfig.bin_size} style={styles.input} type="number"
                      onChange={handleBinSizeChanged}/>
             </div>
             <div style={{
@@ -233,7 +233,7 @@ const TargetAltControl = ({setScreen}) => {
                 marginBottom: 0,
                 marginLeft: 5,
               }}>Bin # (bins in each phase)</h5>
-              <input value={analysisConfig.bin_num_phase_1} style={styles.input} type="number"
+              <input defaultValue={analysisConfig.bin_num_phase_1} style={styles.input} type="number"
                      onChange={handleBin1Changed}/>
             </div>
             {/*<div style={{*/}
@@ -478,7 +478,6 @@ const TargetAltControl = ({setScreen}) => {
                   marginLeft: 5,
                 }}>Phase duration (seconds):</h5>
                 <input
-                  value={analysisConfig.phases_duration && analysisConfig.phases_duration[0] !== 0 ? analysisConfig.phases_duration[0] : ''}
                   style={styles.input}
                   type="number"
                   onChange={handlePhasesDurationChanged}/>

@@ -1,10 +1,10 @@
 const {app, BrowserWindow, ipcMain, dialog} = require('electron');
-const {PythonShell} = require('python-shell')
 const path = require('path');
-const isDev = require('electron-is-dev')
 const child_process = require("child_process")
 const fs = require('fs')
 const electron = require("electron");
+
+require("update-electron-app")();
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
