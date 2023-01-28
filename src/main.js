@@ -6,6 +6,7 @@ const electron = require("electron");
 const pkg = require("../package.json");
 const {format} = require('util')
 const os = require("os");
+const {down} = require("@vercel/webpack-asset-relocator-loader");
 const userAgent = format(
   '%s/%s (%s: %s)',
   pkg.name,
@@ -13,9 +14,9 @@ const userAgent = format(
   os.platform(),
   os.arch(),
 )
-require("update-electron-app")({
-  logger: console
-});
+// require("update-electron-app")({
+//   logger: console
+// });
 
 // I'm going to handle updates manually
 
@@ -116,10 +117,8 @@ ipcMain.on('toMain', (event, args) => {
       const {autoUpdater} = electron;
       const reqHeaders = {'User-Agent': userAgent}
       const feedURL = `${defaults.host}/MatthewLamperski/${pkg.name}/${process.platform}-${process.arch}/${app.getVersion()}`
+      let downloading = false;
       autoUpdater.setFeedURL(feedURL, reqHeaders);
-      autoUpdater.on('error', err => {
-        log(err)
-      })
       autoUpdater.on('error', err => {
         // Why is this being triggered?
         log('updater error', {err})
@@ -130,7 +129,8 @@ ipcMain.on('toMain', (event, args) => {
       })
 
       autoUpdater.on('update-available', () => {
-        log('update-available; downloading...')
+        downloading = true;
+        log('update-available; downloading now')
       })
 
       autoUpdater.on('update-not-available', () => {
@@ -155,7 +155,7 @@ ipcMain.on('toMain', (event, args) => {
       autoUpdater.checkForUpdates()
       setInterval(() => {
         autoUpdater.checkForUpdates()
-      }, 5000)
+      }, 60000 * 5)
     }
   }
 
