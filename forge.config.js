@@ -1,5 +1,3 @@
-const chmodr = require("chmodr");
-const path = require("path");
 require("dotenv").config()
 module.exports = {
 
