@@ -1,7 +1,7 @@
 {
   "name": "analysis-resurgence-3d",
   "productName": "Analysis Resurgence 3D",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Description",
   "main": ".webpack/main",
   "scripts": {
