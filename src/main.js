@@ -121,7 +121,8 @@ ipcMain.on('toMain', (event, args) => {
       autoUpdater.setFeedURL(feedURL, reqHeaders);
       autoUpdater.on('error', err => {
         // Why is this being triggered?
-        log('updater error', {err})
+        event.sender.send('fromMain', ['ERRORRR', err])
+        console.log('updater error', err)
       })
 
       autoUpdater.on('checking-for-update', () => {

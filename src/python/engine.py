@@ -23,7 +23,9 @@ class AnalysisEngine:
         participants = [Participant(dir_path, file_path, self.config) for file_path in self.participant_files]
 
         # Filter out excluded participants
-        self.participants = list(filter(lambda participant: not participant.excluded, participants))
+        self.participants = list(
+            participants if self.config['auto_exclude'] else filter(lambda participant: not participant.excluded,
+                                                                    participants))
         self.excluded_participants = list(filter(lambda participant: participant.excluded, participants))
 
         self.event_list = self.participants[0].event_list
@@ -47,7 +49,7 @@ class AnalysisEngine:
 
         if analysis_type == 'targetAltControl':
             self.__produce_target_alt_control_summary(out_file_name)
-            if len(self.excluded_participants) != 0:
+            if len(self.excluded_participants) != 0 and self.config['auto_exclude']:
                 self.__produce_exclusion_summary(out_file_name)
 
     def __produce_target_alt_control_summary(self, out_file_name):
