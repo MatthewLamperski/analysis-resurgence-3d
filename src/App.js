@@ -7,14 +7,33 @@ import CuePairingAnalysis from "./screens/CuePairingAnalysis";
 
 const App = () => {
   useEffect(() => {
-    window.api.send('toMain', {
-      command: 'check updates'
-    })
+    // window.api.send('toMain', {
+    //   command: 'check updates'
+    // })
     window.api.receive('fromMain', (event, args) => {
       console.log('Event received from main', JSON.stringify(event, null, 2))
+      if (event && event.length !== 0) {
+        if (event[0] === 'checking-for-update') {
+          setCheckingForUpdates(true)
+        } else if (event[0] === 'update-available') {
+          setCheckingForUpdates(false)
+          setUpdating(true)
+        } else if (event[0] === 'update-downloaded') {
+          setUpdating(false)
+          setRestartAvailableForUpdate(event[1])
+        }
+      }
+    })
+  }, [])
+  const handleRestartToUpdate = useCallback(() => {
+    window.api.send('toMain', {
+      command: 'restartToUpdate',
     })
   }, [])
   const [colorScheme, setColorScheme] = useState('dark')
+  const [updating, setUpdating] = useState(false);
+  const [restartAvailableForUpdate, setRestartAvailableForUpdate] = useState(false)
+  const [checkingForUpdates, setCheckingForUpdates] = useState(false)
   const [screen, setScreen] = useState('menu')
   const goToTargetAltControl = useCallback(() => {
     setScreen('targetAltControl')
@@ -176,6 +195,78 @@ const App = () => {
         <h4 style={{paddingLeft: 10, color: colorScheme === 'dark' ? '#d3d3d3' : 'black', fontWeight: 200}}>Analysis
           Resurgence 3D</h4>
       </div>
+      {
+        (updating || checkingForUpdates) && (
+          <div style={{
+            width: '100%',
+            backgroundColor: "#242424",
+            padding: 15,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            <h5 style={{
+              color: 'white',
+              margin: 0
+            }}>{checkingForUpdates ? "Checking for updates" : updating ? "Downloading update, this may take a bit." : "Error"}</h5>
+          </div>
+        )
+      }
+      {
+        (restartAvailableForUpdate) && (
+          <div style={{
+            alignSelf: 'stretch',
+            backgroundColor: "#242424",
+            padding: 15,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div
+              style={{
+                backgroundColor: "#323232",
+                padding: 8,
+                borderRadius: 15,
+                cursor: 'pointer',
+                display: 'flex',
+                opacity: 0,
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingLeft: 15,
+                paddingRight: 15,
+                marginLeft: 10
+              }}>
+              <h5 style={{
+                color: 'white',
+                margin: 0
+              }}>Restart</h5>
+            </div>
+            <h5 style={{
+              color: 'white',
+              margin: 0
+            }}>{`Update available. Restart to install v${restartAvailableForUpdate.version}`}</h5>
+            <div
+              onClick={handleRestartToUpdate}
+              style={{
+                backgroundColor: "#323232",
+                padding: 8,
+                borderRadius: 15,
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingLeft: 15,
+                paddingRight: 15,
+                marginLeft: 10
+              }}>
+              <h5 style={{
+                color: 'white',
+                margin: 0
+              }}>Restart</h5>
+            </div>
+          </div>
+        )
+      }
       <div style={{
         alignSelf: 'stretch',
         flex: 1,

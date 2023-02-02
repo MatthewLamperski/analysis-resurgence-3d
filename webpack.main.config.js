@@ -6,7 +6,9 @@ class PermissionsPlugin {
   apply(compiler) {
     compiler.hooks.afterEmit.tap("PermissionsPlugin", () => {
       chmodr(path.join(__dirname, './.webpack/main/python'), 0o755, err => {
-        console.log("Error changing exe perms " + err)
+        if (err) {
+          console.log("Error changing exe perms " + err)
+        }
       })
       console.log("changing permissions", path.join(__dirname, './.webpack/main/python'), __dirname)
     })

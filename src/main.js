@@ -126,31 +126,19 @@ ipcMain.on('toMain', (event, args) => {
       })
 
       autoUpdater.on('checking-for-update', () => {
-        log('checking-for-update')
+        log('checking-for-update');
       })
 
       autoUpdater.on('update-available', () => {
         downloading = true;
-        log('update-available; downloading now')
+        log('update-available', 'downloading-now')
       })
 
       autoUpdater.on('update-not-available', () => {
         log('update-not-available')
       })
       autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateURL) => {
-        log('update-downloaded', [event, releaseNotes, releaseName, releaseDate, updateURL])
-
-        const dialogOpts = {
-          type: 'info',
-          buttons: ['Restart', 'Later'],
-          title: 'Application Update',
-          message: process.platform === 'win32' ? releaseNotes : releaseName,
-          detail: 'A new version has been downloaded. Restart the application to apply the updates.'
-        }
-
-        dialog.showMessageBox(dialogOpts).then(({response}) => {
-          if (response === 0) autoUpdater.quitAndInstall()
-        })
+        log('update-downloaded', {event, releaseNotes, releaseName, releaseDate, updateURL})
       })
 
       autoUpdater.checkForUpdates()
@@ -158,6 +146,9 @@ ipcMain.on('toMain', (event, args) => {
         autoUpdater.checkForUpdates()
       }, 60000 * 5)
     }
+  }
+  if (args.command && args.command === 'restartToUpdate') {
+    autoUpdater.quitAndInstall()
   }
 
 
