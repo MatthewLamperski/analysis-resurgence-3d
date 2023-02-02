@@ -23,9 +23,11 @@ class AnalysisEngine:
         participants = [Participant(dir_path, file_path, self.config) for file_path in self.participant_files]
 
         # Filter out excluded participants
-        self.participants = list(
-            participants if self.config['auto_exclude'] else filter(lambda participant: not participant.excluded,
-                                                                    participants))
+        if (self.config['auto_exclude']):
+            self.participants = list(filter(lambda participant: not participant.excluded, participants))
+        else:
+            self.participants = participants
+
         self.excluded_participants = list(filter(lambda participant: participant.excluded, participants))
 
         self.event_list = self.participants[0].event_list

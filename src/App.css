@@ -26,6 +26,6 @@
     transform: scale(102%);
 }
 
-input {
+input[type="text"] {
     all: unset;
 }

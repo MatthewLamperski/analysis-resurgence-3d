@@ -9,6 +9,7 @@ const TargetAltControl = ({setScreen}) => {
   const [analysisConfig, setAnalysisConfig] = useState({
     bin_size: 60,
     bin_num_phase_1: 5,
+    auto_exclude: true,
   });
   const handleDragIn = useCallback((e) => {
     e.preventDefault()
@@ -37,6 +38,9 @@ const TargetAltControl = ({setScreen}) => {
       setShowDurationOverrideModal(false)
     }
   }, [overrideOptions, analysisConfig])
+  useEffect(() => {
+    console.log(analysisConfig)
+  }, [analysisConfig])
   const handleDrop = useCallback((e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -55,7 +59,7 @@ const TargetAltControl = ({setScreen}) => {
       })
       setDragging(false)
     }
-  }, [dragging])
+  }, [dragging, analysisConfig])
   const [err, setErr] = useState()
   const [showDurationOverrideModal, setShowDurationOverrideModal] = useState(false);
 
@@ -93,7 +97,7 @@ const TargetAltControl = ({setScreen}) => {
         bin_num_phase_3: analysisConfig.bin_num_phase_1
       }
     })
-  }, [finished, err])
+  }, [finished, err, analysisConfig])
 
   const openFile = useCallback(() => {
     window.api.send('toMain', {
@@ -236,37 +240,33 @@ const TargetAltControl = ({setScreen}) => {
               <input defaultValue={analysisConfig.bin_num_phase_1} style={styles.input} type="number"
                      onChange={handleBin1Changed}/>
             </div>
-            {/*<div style={{*/}
-            {/*  flexDirection: 'column',*/}
-            {/*  display: 'flex',*/}
-            {/*  justifyContent: 'flex-start',*/}
-            {/*  alignItems: 'flex-start',*/}
-            {/*}}>*/}
-            {/*  <h5 style={{*/}
-            {/*    color: colorScheme === 'dark' ? '#b4b4b4' : 'black',*/}
-            {/*    marginTop: 0,*/}
-            {/*    marginBottom: 0,*/}
-            {/*    marginLeft: 5,*/}
-            {/*  }}>Bin # Phase 2</h5>*/}
-            {/*  <input value={analysisConfig.bin_num_phase_2_max} style={styles.input} type="number"*/}
-            {/*         onChange={handleBin2Changed}/>*/}
-            {/*</div>*/}
-            {/*<div style={{*/}
-            {/*  flexDirection: 'column',*/}
-            {/*  display: 'flex',*/}
-            {/*  justifyContent: 'flex-start',*/}
-            {/*  alignItems: 'flex-start'*/}
-            {/*}}>*/}
-            {/*  <h5 style={{*/}
-            {/*    color: colorScheme === 'dark' ? '#b4b4b4' : 'black',*/}
-            {/*    marginTop: 0,*/}
-            {/*    marginBottom: 0,*/}
-            {/*    marginLeft: 5,*/}
-            {/*  }}>Bin # Phase 3</h5>*/}
-            {/*  <input value={analysisConfig.bin_num_phase_3} style={styles.input} type="number"*/}
-            {/*         onChange={handleBin3Changed}/>*/}
-            {/*</div>*/}
+
           </div>
+
+        </div>
+        <div style={{
+          flexDirection: 'column',
+          display: 'flex',
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
+          alignSelf: 'stretch',
+          marginTop: 10,
+        }}>
+          <h5 style={{
+            color: colorScheme === 'dark' ? '#b4b4b4' : 'black',
+            marginTop: 0,
+            marginBottom: 0,
+            marginLeft: 5,
+          }}>Disable automatic exclusion</h5>
+          <input style={{backgroundColor: 'green'}}
+                 type="checkbox"
+                 onChange={e => {
+                   console.log(e.target.checked)
+                   setAnalysisConfig(prevState => ({
+                     ...prevState,
+                     auto_exclude: !e.target.checked
+                   }))
+                 }}/>
         </div>
       </div>
       <div onMouseEnter={handleDragIn} onMouseLeave={handleDragOut} onClick={handleButtonPressed}
@@ -311,7 +311,7 @@ const TargetAltControl = ({setScreen}) => {
                 <h5 style={{
                   color: colorScheme === 'dark' ? '#969696' : 'black',
                   marginTop: 5
-                }}>{`${finished.files_processed + finished.excluded} total files processed in ${finished.duration} seconds. ${finished.excluded} ${finished.excluded === 1 ? 'was' : 'were'} automatically excluded.`}</h5>
+                }}>{`${finished.files_processed + finished.excluded} total files processed in ${finished.duration} seconds.${analysisConfig.auto_exclude ? `${finished.excluded} ${finished.excluded === 1 ? 'was' : 'were'} automatically excluded.` : ''}`}</h5>
 
                 <div onClick={openFile} style={{
                   cursor: 'pointer',

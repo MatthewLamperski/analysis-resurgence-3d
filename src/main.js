@@ -106,6 +106,7 @@ ipcMain.on('toMain', (event, args) => {
   if (args.command && args.command === 'check updates') {
     if (app.isReady()) {
       const log = (...args) => {
+        console.log(...args)
         event.sender.send('fromMain', [...args])
       }
       const defaults = {
@@ -144,7 +145,7 @@ ipcMain.on('toMain', (event, args) => {
       autoUpdater.checkForUpdates()
       setInterval(() => {
         autoUpdater.checkForUpdates()
-      }, 60000 * 5)
+      }, 60000 * 15)
     }
   }
   if (args.command && args.command === 'restartToUpdate') {

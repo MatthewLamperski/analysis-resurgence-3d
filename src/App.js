@@ -21,6 +21,9 @@ const App = () => {
         } else if (event[0] === 'update-downloaded') {
           setUpdating(false)
           setRestartAvailableForUpdate(event[1])
+        } else if (event[0] === 'update-not-available') {
+          setUpdating(false)
+          setCheckingForUpdates(false)
         }
       }
     })
@@ -195,6 +198,7 @@ const App = () => {
         <h4 style={{paddingLeft: 10, color: colorScheme === 'dark' ? '#d3d3d3' : 'black', fontWeight: 200}}>Analysis
           Resurgence 3D</h4>
       </div>
+
       {
         (updating || checkingForUpdates) && (
           <div style={{
