@@ -1,7 +1,7 @@
 {
   "name": "analysis-resurgence-3d",
   "productName": "Analysis Resurgence 3D",
-  "version": "1.2.8",
+  "version": "1.2.10",
   "description": "Electron application to provide data analysis solutions to University of Florida's TABS Lab.",
   "main": ".webpack/main",
   "scripts": {
