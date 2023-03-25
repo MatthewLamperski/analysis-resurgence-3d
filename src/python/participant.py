@@ -102,7 +102,17 @@ class Participant:
 
                 current_line = file.readline()
 
+            # Instead of fixing the format, we will read until a line has a ')' in it, marking the beginning of the events list
+            last_position = file.tell()
+            while ")" not in current_line:
+                current_line = file.readline()
+                last_position = file.tell()
+
+            # Rewind file pointer back to beginning of current_line
+            file.seek(last_position - len(current_line))
+
             self.type_response = np.zeros((max(map(lambda event: int(event[0]), self.event_list)), 3, 30))
+
             # self.type_response = np.zeros((16, 3, 30))  # (response types, phases, max bins)
             # Now the readlines (which starts at current iterator position)
             # will give us beginning of events
@@ -115,7 +125,7 @@ class Participant:
 
             event_lines = [tuple([event_line.rstrip().split()[0][:-1], int(event_line.rstrip().split()[1])]) for
                            event_line
-                           in file.readlines() if (event_line != '\n' and event_line != '')]
+                           in file.readlines() if (event_line != '\n' and event_line != '' and ")" in event_line)]
             self.events = event_lines
             self.num_of_events = len(event_lines)
 
@@ -124,6 +134,10 @@ class Participant:
         current_phase = 1 if self.no_phase_1 else 0  # If no_phase_1 -> start with phase 2, else start w/ 1
         current_phase_start_time = 0
         first_sr = True if self.no_phase_1 else False
+
+        phase_1_timestamp = int(self.config['bin_size']) * int(self.config['bin_num_phase_1'])
+        phase_2_timestamp = int(self.config['bin_size']) * int(
+            self.config['bin_num_phase_2_max']) + phase_1_timestamp
 
         # Grabs the end times of each phase (this relies on there only being one entry starting
         # with '30)', '31)', and '99)', unless a manual duration override is supplied.
@@ -136,14 +150,23 @@ class Participant:
         else:
             # next() accepts a default, so if '99' is not found, then it will be the max time
             self.phases_offset = (
-                next((time for (event_type, time) in self.events if (event_type == "30")), -1),
-                next((time for (event_type, time) in self.events if (event_type == "31")), -1),
+                next((time for (event_type, time) in self.events if (event_type == "30")),
+                     phase_1_timestamp),
+                next((time for (event_type, time) in self.events if (event_type == "31")),
+                     phase_2_timestamp),
                 next((time for (event_type, time) in self.events if (event_type == "99")),
                      max(self.events, key=lambda event: event[1])[1])
             )
 
-        if self.phases_offset[0] == -1 or self.phases_offset[1] == -1:
-            raise Exception(1)
+        # reconstruct missing end of phase event markers if need be
+        end_of_phase_1_found = len([time for (event_type, time) in self.events if (event_type == "30")]) > 0
+        end_of_phase_2_found = len([time for (event_type, time) in self.events if (event_type == "31")]) > 0
+        if not end_of_phase_1_found:
+            self.events.append(("30", phase_1_timestamp))
+        if not end_of_phase_2_found:
+            self.events.append(("31", phase_2_timestamp))
+
+        self.events.sort(key=lambda event: event[1])
 
         for event_marker in self.events:
             event_type, event_time = event_marker
@@ -209,44 +232,52 @@ class Participant:
 
         # Check exclusion reasons
 
-        # 3. There are zero target AND zero alt responses in the last five bins of Phase 1
-        num_bins_p1 = self.config['bin_num_phase_1']
-        last_5_bins_of_phase_1_tr = list(
-            map(lambda num: int(num), self.type_response[0][0][(num_bins_p1 - 5):(num_bins_p1 - 30)]))
-        last_5_bins_of_phase_1_ar = list(
-            map(lambda num: int(num), self.type_response[1][0][(num_bins_p1 - 5):(num_bins_p1 - 30)]))
-        if sum(last_5_bins_of_phase_1_tr) == 0 and sum(last_5_bins_of_phase_1_ar) == 0:
-            self.excluded = True
-            self.exclusion_reason = "Zero target and zero alt responses in last 5 bins of Phase 1"
+        # 1. There are zero target and zero alt responses in the last 2 minutes of phase 1
 
-        # 4. There are zero target AND zero alt responses in the last five bins of Phase 2
-        num_bins_p2 = self.config['bin_num_phase_2_max']
-        last_5_bins_of_phase_2_tr = list(
-            map(lambda num: int(num), self.type_response[0][1][(num_bins_p2 - 5):(num_bins_p2 - 30)]))
-        last_5_bins_of_phase_2_ar = list(
-            map(lambda num: int(num), self.type_response[1][1][(num_bins_p2 - 5):(num_bins_p2 - 30)]))
+        phase_1_end = self.phases_offset[0]
+        phase_1_end_minus_two_mins = phase_1_end - 120000 if phase_1_end - 120000 > 0 else 0
 
-        if sum(last_5_bins_of_phase_2_tr) == 0 and sum(last_5_bins_of_phase_2_ar) == 0:
+        last_2_mins_of_phase_1_tr = list(
+            filter(lambda evt: evt[0] == "01" and phase_1_end_minus_two_mins <= evt[1] <= phase_1_end,
+                   self.events))
+        last_2_mins_of_phase_1_ar = list(
+            filter(lambda evt: evt[0] == "02" and phase_1_end_minus_two_mins <= evt[1] <= phase_1_end,
+                   self.events))
+        if len(last_2_mins_of_phase_1_ar) == 0 and len(last_2_mins_of_phase_1_tr) == 0:
             self.excluded = True
-            self.exclusion_reason = "Zero target and zero alt responses in the last 5 bins of Phase 2"
+            self.exclusion_reason = "Zero target and zero alt responses in last 2 minutes of Phase 1"
 
-        # 5. There are no alt responses in all of Phase 2
-        alt_responses_in_phase_2 = list(map(lambda nums: list(map(lambda num: int(num), nums)), self.type_response[1]))
-        alt_responses_in_phase_2 = np.asarray(alt_responses_in_phase_2).flatten()
-        if sum(alt_responses_in_phase_2) == 0:
-            self.excluded = True
-            self.exclusion_reason = "There are no alt responses in all of Phase 2"
+        # 2. There are zero target and zero alt responses in the last 2 minutes of phase 2
 
-        # 6. By the end of Phase 2, target responding has not decreased to 50% of the Phase-1 levels.
-        # Take average # of target responses in last 5 bins of phase 1
-        avg_tg_responses_p1 = sum(last_5_bins_of_phase_1_tr) / 5.0
-        # print(f"{self.file_path[:-4]} avg p1 last 5 bins", avg_tg_responses_p1)
-        # Get # of target responses in last bin of phase 2
-        tg_responses_p2_last_bin = last_5_bins_of_phase_2_tr[-1]
-        # If responding has not decreased to below 50% of phase 1 avg, exclude it
-        if tg_responses_p2_last_bin >= (0.5 * avg_tg_responses_p1):
+        phase_2_end = self.phases_offset[1]
+        phase_2_end_minus_two_mins = phase_2_end - 120000
+
+        last_2_mins_of_phase_2_tr = list(
+            filter(lambda evt: evt[0] == "01" and phase_2_end_minus_two_mins <= evt[1] <= phase_2_end,
+                   self.events))
+
+        last_2_mins_of_phase_2_ar = list(
+            filter(lambda evt: evt[0] == "02" and phase_2_end_minus_two_mins <= evt[1] <= phase_2_end,
+                   self.events))
+
+        if len(last_2_mins_of_phase_2_ar) == 0 and len(last_2_mins_of_phase_2_tr) == 0:
             self.excluded = True
-            self.exclusion_reason = f"Target responding did not decrease below 50% of phase 1 levels.\nPhase 1 AVG: {avg_tg_responses_p1}. Last bin of Phase 2: {tg_responses_p2_last_bin}"
+            self.exclusion_reason = "Zero target and zero alt responses in last 2 minutes of Phase 2"
+
+        # 3. Target responding has not decreased to 50% of the phase-1 levels
+        # Check if # of target responses in last min of phase 2 is less than 50% of last min of phase 1
+
+        phase_1_end_minus_one_min = phase_1_end - 60000 if phase_1_end - 60000 > 0 else 0
+        last_1_min_p1_tr = list(
+            filter(lambda evt: evt[0] == "01" and phase_1_end_minus_one_min <= evt[1] <= phase_1_end, self.events))
+        phase_2_end_minus_one_min = phase_2_end - 60000 if phase_2_end - 60000 > 0 else 0
+        last_1_min_p2_tr = list(
+            filter(lambda evt: evt[0] == "01" and phase_2_end_minus_one_min <= evt[1] <= phase_2_end, self.events))
+
+        # If responding has not decreased to 50% of phase 1, exclude
+        if len(last_1_min_p2_tr) >= (0.5 * len(last_1_min_p1_tr)):
+            self.excluded = True
+            self.exclusion_reason = f"Target responding has not decreased to 50% of phase 1 levels. Phase 1 level (last minute): {len(last_1_min_p1_tr)}, Phase 2 level (last minute): {len(last_1_min_p2_tr)}"
 
         # If 99 was not detected, (some csvs were cut off in earlier experiments)
         # then do NOT exclude, instead give exclusion reason to be 'cut-off', so that when producing summary,
@@ -270,8 +301,8 @@ class Participant:
                 self.type_response[event_type][phase][_bin - 1] += 1
             else:
                 self.type_response[event_type][phase][_bin - 1] += 1
-                self.excluded = True
-                self.exclusion_reason = f"Too many responses in bin {_bin} in phase {phase + 1} for event {event_type + 1} ({int(current_bin_count + 1)})"
+                # self.excluded = True
+                # self.exclusion_reason = f"Too many responses in bin {_bin} in phase {phase + 1} for event {event_type + 1} ({int(current_bin_count + 1)})"
 
     def __assign_forward(self, event_type, phase, time_since_phase_begin):
         # Same issue with time_since_phase_begin, may be incorrectly named, but program should
@@ -283,8 +314,8 @@ class Participant:
             self.type_response[event_type][phase][_bin - 1] += 1
         else:
             self.type_response[event_type][phase][_bin - 1] += 1
-            self.excluded = True
-            self.exclusion_reason = f"Too many responses in bin {_bin + 1} in phase {phase + 1} for event {event_type + 1} ({int(current_bin_count + 1)})"
+            # self.excluded = True
+            # self.exclusion_reason = f"Too many responses in bin {_bin + 1} in phase {phase + 1} for event {event_type + 1} ({int(current_bin_count + 1)})"
 
 
 # Our custom encoder, which allows each participant object to be

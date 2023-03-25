@@ -8,39 +8,64 @@ from participant import Participant, ParticipantEncoder
 if __name__ == '__main__':
     # Get directory path from Electron (submitted by the user as arguments to cmd line)
     n = len(sys.argv)
-    if n < 2:
-        response = {
-            "error": "Script run with 0 arguments, path to folder needs to be passed."
-        }
-        json.dump(response, sys.stdout)
-    else:
-        config = json.loads(sys.argv[3])
-        try:
-            # All this information is received from Electron
-            dir_path = str(sys.argv[1])
-            analysis_type = str(sys.argv[2])
 
-            participant_files = os.listdir(dir_path)
+    # All this information is received from Electron
+    dir_path = str(sys.argv[1])
+    analysis_type = str(sys.argv[2])
 
-            # Get time taken
-            start = time.time()
-            engine = AnalysisEngine(dir_path, config)
-            engine.produce_summary(analysis_type)
-            end = time.time() - start
+    config = json.loads(sys.argv[3])
+    participant_files = os.listdir(dir_path)
 
-            response = {
-                "message": "Done",
-                "files_processed": engine.files_processed,
-                "duration": round(end, 4),
-                "out_file": engine.out_path,
-                "excluded": int(len(engine.excluded_participants))
-            }
+    # Get time taken
+    start = time.time()
+    engine = AnalysisEngine(dir_path, config)
+    engine.produce_summary(analysis_type)
+    end = time.time() - start
 
-            json.dump(response, sys.stdout)
-            sys.stdout.flush()
-        except Exception as err:
-            response = {
-                "error": repr(err),
-                "config": repr(config),
-            }
-            json.dump(response, sys.stdout)
+    response = {
+        "message": "Done",
+        "files_processed": engine.files_processed,
+        "duration": round(end, 4),
+        "out_file": engine.out_path,
+        "excluded": int(len(engine.excluded_participants))
+    }
+
+    json.dump(response, sys.stdout)
+    sys.stdout.flush()
+
+    # if n < 2:
+    #     response = {
+    #         "error": "Script run with 0 arguments, path to folder needs to be passed."
+    #     }
+    #     json.dump(response, sys.stdout)
+    # else:
+    #     config = json.loads(sys.argv[3])
+    #     try:
+    #         # All this information is received from Electron
+    #         dir_path = str(sys.argv[1])
+    #         analysis_type = str(sys.argv[2])
+    #
+    #         participant_files = os.listdir(dir_path)
+    #
+    #         # Get time taken
+    #         start = time.time()
+    #         engine = AnalysisEngine(dir_path, config)
+    #         engine.produce_summary(analysis_type)
+    #         end = time.time() - start
+    #
+    #         response = {
+    #             "message": "Done",
+    #             "files_processed": engine.files_processed,
+    #             "duration": round(end, 4),
+    #             "out_file": engine.out_path,
+    #             "excluded": int(len(engine.excluded_participants))
+    #         }
+    #
+    #         json.dump(response, sys.stdout)
+    #         sys.stdout.flush()
+    #     except Exception as err:
+    #         response = {
+    #             "error": repr(err),
+    #             "config": repr(config),
+    #         }
+    #         json.dump(response, sys.stdout)

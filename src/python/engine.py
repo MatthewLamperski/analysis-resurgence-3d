@@ -75,7 +75,14 @@ class AnalysisEngine:
             writer.writerow([])
             # Write SR info
             for i in range(4):
-                writer.writerow(map(lambda part: part.sr[i], self.participants))
+                row = []
+                for part in self.participants:
+                    if len(part.sr) > i:
+                        row.append(str(part.sr[i]))
+                    else:
+                        row.append("no sr info")
+                writer.writerow(row)
+                # writer.writerow(map(lambda part: part.sr[i] if part.sr[i] else 'no sr info', self.participants))
             writer.writerow([])
 
             # Inform if has been cut off, if so, the rest of analysis should essentially be ignored, as it will be inaccurate
