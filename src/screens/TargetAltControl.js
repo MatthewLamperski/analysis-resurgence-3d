@@ -306,6 +306,7 @@ const TargetAltControl = ({setScreen}) => {
                     fill="#37796c"
                     fillRule="evenodd"
                   />
+
                 </svg>
                 <h3 style={{color: colorScheme === 'dark' ? '#d3d3d3' : 'black', marginBottom: 0}}>Success!</h3>
                 <h5 style={{
